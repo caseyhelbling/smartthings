@@ -1,4 +1,3 @@
-require 'smartthings/api'
 
 
 module SmartThings
@@ -6,11 +5,6 @@ module SmartThings
   class Account < API
     #END_POINT = "api/accounts/:id"
     END_POINT = "api/accounts/"
-
-    attr_accessor :account_id
-    def initialize(account_id)
-      @account_id = account_id
-    end
 
     def name
     end

@@ -1,4 +1,6 @@
-smartthings
+SmartThings
 ===========
 
 Ruby API
+
+

@@ -1,4 +1,3 @@
-require 'smartthings/api'
 
 module SmartThings
 
@@ -6,9 +5,6 @@ module SmartThings
 
     #/api/clients
     
-    def initialize
-    end
-
   end
 
 end
