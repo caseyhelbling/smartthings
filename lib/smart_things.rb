@@ -1,6 +1,7 @@
 
 require 'multi_json'
 require 'faraday'
+require 'faraday_middleware'
 
 require_relative 'smart_things/api'
 require_relative 'smart_things/account'
@@ -18,7 +19,8 @@ module SmartThings
 
   DEFAULT_MIDDLEWARE = Proc.new do |faraday|
     faraday.request :url_encoded
-    faraday.response :json
+    #faraday.response :json
+    faraday.use Faraday::Response::ParseJson
     faraday.adapter Faraday.default_adapter
   end
 

@@ -9,26 +9,22 @@ module SmartThings
       @options = options
     end
 
-    def server(use_ssl=false)
+    def server(use_ssl)
       # figure out different envs
       "#{use_ssl ? "https" : "http"}://#{SmartThings::HOST}"
     end
     
-    def self.connection
+    def self.connection(server, opts)
       #if request_options[:use_ssl]
         #ssl = (request_options[:ssl] ||= {})
         #ssl[:verify] = true unless ssl.has_key?(:verify)
       #end
 
-      Faraday.new(
-        server(@options[:use_ssl]), 
-        @options, 
-        &SmartThings::DEFAULT_MIDDLEWARE
-      )
+      Faraday.new(server, opts, &SmartThings::DEFAULT_MIDDLEWARE)
     end
 
     def connection
-      @connection ||= self.class.connection
+      @connection ||= self.class.connection(server(@options[:use_ssl]), @options)
     end
 
 
@@ -40,8 +36,8 @@ module SmartThings
       #end
 
       response = case @verb
-        when 'get' then connection.get(@path, params)
-        when 'post' then connection.post(@path, params)
+        when 'get' then connection.get(@path)#, @clean_params)
+        when 'post' then connection.post(@path)#, @clean_params)
         else
       end
 

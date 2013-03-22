@@ -35,6 +35,11 @@ module SmartThings
       MultiJson.load(result.body)
     end
 
+    def data
+      @response ||= call(end_point)
+    end
+
+
   end
 
 end

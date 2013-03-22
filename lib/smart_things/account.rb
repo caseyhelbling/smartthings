@@ -3,17 +3,31 @@
 module SmartThings
 
   class Account < API
-    #END_POINT = "api/accounts/:id"
-    END_POINT = "api/accounts/"
 
-    def name
+    def end_point
+      "api/accounts/"
     end
 
-    def full_name
+    def id
+      data['id']
+    end
+
+    def name
+      data['name']
+    end
+
+    def full_name 
+      data['fullName']
     end
 
     def locked
+      data['locked']
     end
+
+    def permissions
+      data['permissions']
+    end
+
 
     def locations
       #https://graph.api.smartthings.com/api/accounts/:id/locations
