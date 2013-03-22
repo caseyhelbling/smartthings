@@ -5,9 +5,11 @@ module SmartThings
     SERVER = "graph.api.smartthings.com"
 
     attr_reader :account_id
+    attr_accessor :http_options
 
     def initialize(account_id = nil)
       @account_id = account_id
+      @http_options = {}
     end
 
 
@@ -20,6 +22,8 @@ module SmartThings
     def api(path, args = {}, verb = "get", options = {})
 
       result = make_request(path, args, verb, options)
+
+      puts "RESULT: #{result}"
 
       if result.status.to_i >= 500
         raise "#{result.status.to_i} :: #{result.body}"
@@ -35,8 +39,12 @@ module SmartThings
       # if the verb isn't get or post, send it as a post argument
       args.merge!({:method => verb}) && verb = "post" if verb != "get" && verb != "post"
 
+      # turn all the keys to strings (Faraday has issues with symbols under 1.8.7) and resolve UploadableIOs
+      params = args.inject({}) {|hash, kv| hash[kv.first.to_s] = kv.last.is_a?(UploadableIO) ? kv.last.to_upload_io : kv.last; hash}
+
       # figure out our options for this request
-      request_options = {:params => (verb == "get" ? params : {})}.merge(http_options || {}).merge(process_options(options))
+      request_options = {:params => (verb == "get" ? params : {})}.merge(http_options || {})
+
       #request_options[:use_ssl] = true 
       if request_options[:use_ssl]
         ssl = (request_options[:ssl] ||= {})
@@ -45,7 +53,7 @@ module SmartThings
 
       # set up our Faraday connection
       # we have to manually assign params to the URL or the
-      conn = Faraday.new(server(request_options), request_options, nil)
+      conn = Faraday.new(server(request_options), request_options )
 
       response = conn.send(verb, path, (verb == "post" ? params : {}))
 
