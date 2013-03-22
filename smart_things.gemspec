@@ -8,6 +8,7 @@ Gem::Specification.new do |gem|
   gem.description = ""
   gem.homepage    = "http://github.com/caseyhelbling/smartthings"
   gem.version     = SmartThings::VERSION
+  gem.licenses    = ['MIT']
 
   gem.authors     = ["Casey Helbling"]
   gem.email       = "casey@softwareforgood.com"
