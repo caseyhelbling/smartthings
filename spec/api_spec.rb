@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe "SmartThings::API" do
 
-  describe "server" do
+  describe ".server" do
     subject { SmartThings::API.new('12345').server(opts) }
 
     context "for ssl" do
@@ -18,5 +18,13 @@ describe "SmartThings::API" do
         subject.should == 'http://graph.api.smartthings.com'
       end
     end
+  end
+
+
+  describe ".api" do
+    subject { SmartThings::API.new('12345') }
+
+    
+
   end
 end

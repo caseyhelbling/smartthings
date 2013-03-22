@@ -1,27 +1,77 @@
 
 module SmartThings
 
+
+  DEFAULT_MIDDLEWARE = Proc.new do |faraday|
+    builder.request :url_encoded
+    faraday.response :json
+    builder.adapter Faraday.default_adapter
+  end
+
+  class Request
+
+    def initialize(path, args, verb, options={})
+      @path = path
+      @args = args
+      @verb = verb
+      @options = options
+    end
+
+    def clean(args)
+      # turn all the keys to strings (Faraday has issues with symbols under 1.8.7) and resolve UploadableIOs
+      args.inject({}) {|hash, kv| hash[kv.first.to_s] = kv.last.is_a?(UploadableIO) ? kv.last.to_upload_io : kv.last; hash}
+    end
+    
+
+    def connection
+      if request_options[:use_ssl]
+        ssl = (request_options[:ssl] ||= {})
+        ssl[:verify] = true unless ssl.has_key?(:verify)
+      end
+
+      # set up our Faraday connection
+      Faraday.new(
+        server(request_options[:use_ssl]), 
+        request_options, 
+        &SmartThings::DEFAULT_MIDDLEWARE
+      )
+    end
+
+    def execute
+      # if the verb isn't get or post, send it as a post argument
+      unless ['get', 'post'].include?(@verb)
+        @verb = "post" 
+        @args.merge!({:method => @verb})
+      end
+
+      params = clean(@args)
+
+      response = connection.send(@verb, @path, params)
+
+      # Log URL information
+      puts "#{@verb.upcase}: #{@path} params: #{params.inspect}"
+      [response.status.to_i, response.body, response.headers]
+    end
+
+  end
+
   class  API
     SERVER = "graph.api.smartthings.com"
 
     attr_reader :account_id
-    attr_accessor :http_options
 
     def initialize(account_id = nil)
       @account_id = account_id
-      @http_options = {}
+    end
+
+    def server(use_ssl=false)
+      "#{use_ssl ? "https" : "http"}://#{SmartThings::API::SERVER}"
     end
 
 
-    def server(options = {})
-      server = SmartThings::API::SERVER
-      "#{options[:use_ssl] ? "https" : "http"}://#{server}"
-    end
+    def call(path, args = {}, verb = "get", options = {})
 
-
-    def api(path, args = {}, verb = "get", options = {})
-
-      result = make_request(path, args, verb, options)
+      result = SmartThings::Request.new(path, args, verb, options).execute
 
       puts "RESULT: #{result}"
 
@@ -30,62 +80,8 @@ module SmartThings
       end
     
       # parse the body as JSON and run it through the error checker (if provided)
-      # Note: Facebook sometimes sends results like "true" and "false", which aren't strictly objects
-      # and cause MultiJson.load to fail -- so we account for that by wrapping the result in []
-      MultiJson.load("[#{result.body.to_s}]")[0]
+      MultiJson.load(result.body)
     end
-
-    def make_request(path, args, verb, options = {})
-      # if the verb isn't get or post, send it as a post argument
-      args.merge!({:method => verb}) && verb = "post" if verb != "get" && verb != "post"
-
-      # turn all the keys to strings (Faraday has issues with symbols under 1.8.7) and resolve UploadableIOs
-      params = args.inject({}) {|hash, kv| hash[kv.first.to_s] = kv.last.is_a?(UploadableIO) ? kv.last.to_upload_io : kv.last; hash}
-
-      # figure out our options for this request
-      request_options = {:params => (verb == "get" ? params : {})}.merge(http_options || {})
-
-      #request_options[:use_ssl] = true 
-      if request_options[:use_ssl]
-        ssl = (request_options[:ssl] ||= {})
-        ssl[:verify] = true unless ssl.has_key?(:verify)
-      end
-
-      # set up our Faraday connection
-      # we have to manually assign params to the URL or the
-      conn = Faraday.new(server(request_options), request_options )
-
-      response = conn.send(verb, path, (verb == "post" ? params : {}))
-
-      # Log URL information
-      puts "#{verb.upcase}: #{path} params: #{params.inspect}"
-      [response.status.to_i, response.body, response.headers]
-    end
-
-
-    def graph_call(path, args = {}, verb = "get", options = {})
-      result = api(path, args, verb, options) do |response|
-        error = check_response(response[0], response[1])
-        raise error if error
-      end
-
-      # now process as appropriate for the given call (get picture header, etc.)
-      result 
-    end
-    
-
-    def check_response(http_status, response_body)
-      http_status = http_status.to_i
-
-      if http_status >= 400
-        begin
-          response_hash = MultiJson.load(response_body)
-        rescue MultiJson::DecodeError
-          response_hash = {}
-        end
-      end
-    end
-
 
   end
 
