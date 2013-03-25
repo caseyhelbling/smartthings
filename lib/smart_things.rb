@@ -1,7 +1,8 @@
 
 require 'multi_json'
 require 'faraday'
-require 'faraday_middleware'
+#require 'faraday_middleware'
+#require 'hashie/mash'
 
 require_relative 'smart_things/api'
 require_relative 'smart_things/account'
@@ -18,10 +19,11 @@ module SmartThings
   HOST = "graph.api.smartthings.com"
 
   DEFAULT_MIDDLEWARE = Proc.new do |faraday|
-    faraday.request :url_encoded
-    #faraday.response :json
-    faraday.use Faraday::Response::ParseJson
-    faraday.adapter Faraday.default_adapter
+
+    faraday.adapter :net_http
+    faraday.response :logger
+
+    faraday.request :basic_auth, ENV['ST_USER_NAME'], ENV['ST_PASSWORD']
   end
 
   def self.logger

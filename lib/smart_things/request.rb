@@ -9,9 +9,9 @@ module SmartThings
       @options = options
     end
 
-    def server(use_ssl)
+    def server(dont_use_ssl = false)
       # figure out different envs
-      "#{use_ssl ? "https" : "http"}://#{SmartThings::HOST}"
+      "#{dont_use_ssl ? "http" : "https"}://#{SmartThings::HOST}"
     end
     
     def self.connection(server, opts)
@@ -42,7 +42,9 @@ module SmartThings
       end
 
       # Log URL information
-      #puts "#{@verb.upcase}: #{@path} params: #{params.inspect}"
+      SmartThings.logger.info "#{@verb.upcase}: #{@path} params: #{@clean_params.inspect}"
+      SmartThings.logger.info "response: \n\t::\t#{response.body}"
+
       response
     end
 

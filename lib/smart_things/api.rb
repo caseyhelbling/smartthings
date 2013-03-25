@@ -1,7 +1,6 @@
 
 module SmartThings
 
-
   class  API
 
     attr_reader :account_id
@@ -17,15 +16,18 @@ module SmartThings
 
     def call(path, args = {}, verb = "get", options = {})
 
-      result = SmartThings::Request.new(
+      req = SmartThings::Request.new(
         path, 
         clean(args), 
         verb, 
         options
-      ).execute
+      )
+
+      debugger
+      result = req.execute
 
       #[result.status.to_i, result.body, result.headers]
-      #puts "RESULT: #{result}"
+      SmartThings.logger.info "\n\nRESULT: \n\n#{result}\n\n"
 
       #if result.status.to_i >= 500
         #raise "#{result.status.to_i} :: #{result.body}"
@@ -35,8 +37,8 @@ module SmartThings
       MultiJson.load(result.body)
     end
 
-    def data
-      @response ||= call(end_point)
+    def data(options={})
+      @response ||= call(end_point, {}, 'get', options)
     end
 
 
